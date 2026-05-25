@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BolusMind — Nursing Tutor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060910; --surface: #0d1117; --card: #111820; --border: #1e2d3d;
+    --accent: #00d4aa; --accent2: #0ea5e9; --warn: #f59e0b; --danger: #ef4444;
+    --text: #e2f0ff; --muted: #6b8099; --pill: #162030;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px), linear-gradient(90deg,rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.15; }
+  .orb1 { width: 500px; height: 500px; background: #00d4aa; top: -150px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: #0ea5e9; bottom: -100px; right: -100px; }
+  .app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(6,9,16,0.85); backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .logo { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 700; letter-spacing: -0.5px; cursor:pointer; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg,var(--accent),var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .hbtn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 13px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--pill); color: var(--muted); font-size: 12px;
+    font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .hbtn:hover { border-color: var(--accent); color: var(--text); }
+  .hbtn.connected { border-color: rgba(0,212,170,0.4); color: var(--accent); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+  .status-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(6,9,16,0.88); backdrop-filter: blur(8px);
+    z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    padding: 28px; width: 100%; max-width: 500px;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; display: block; }
+  .form-input {
+    width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 14px; color: var(--text); font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select { appearance: none; cursor: pointer; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-primary {
+    flex: 1; background: linear-gradient(135deg,var(--accent),var(--accent2));
+    border: none; border-radius: 10px; padding: 12px; color: #000;
+    font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost {
+    padding: 12px 20px; background: var(--pill); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--muted); font-family: 'Sora', sans-serif;
+    font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── HOME ── */
+  #homeScreen { padding: 32px 20px; max-width: 900px; margin: 0 auto; width: 100%; }
+  .hero { text-align: center; margin-bottom: 36px; }
+  .hero h1 { font-size: clamp(26px,5.5vw,46px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 12px; }
+  .hero h1 em { font-style: normal; background: linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { color: var(--muted); font-size: 14px; max-width: 460px; margin: 0 auto 24px; line-height: 1.7; }
+  .doubt-bar {
+    display: flex; gap: 10px; margin-bottom: 36px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 8px 8px 8px 16px; transition: border-color 0.2s;
+  }
+  .doubt-bar:focus-within { border-color: var(--accent); }
+  .doubt-bar input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: 'Sora', sans-serif; font-size: 14px; padding: 6px 0; }
+  .doubt-bar input::placeholder { color: var(--muted); }
+  .doubt-bar button { background: linear-gradient(135deg,var(--accent),var(--accent2)); border: none; border-radius: 10px; padding: 10px 18px; color: #000; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+  .doubt-bar button:hover { opacity: 0.85; }
+
+  /* No API banner */
+  .no-api-banner {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .no-api-banner p { font-size: 13px; color: #fca5a5; flex: 1; }
+  .no-api-banner button { background: var(--danger); border: none; border-radius: 8px; padding: 8px 16px; color: #fff; font-size: 12px; font-weight: 600; font-family: 'Sora', sans-serif; cursor: pointer; white-space: nowrap; }
+
+  .section-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 14px; }
+  .subject-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(195px,1fr)); gap: 13px; margin-bottom: 32px; }
+  .subject-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; cursor: pointer; transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .subject-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,var(--accent),var(--accent2)); opacity: 0; transition: opacity 0.2s; }
+  .subject-card:hover { border-color: var(--accent); transform: translateY(-2px); background: #141e2a; }
+  .subject-card:hover::before { opacity: 1; }
+  .subject-icon { font-size: 24px; margin-bottom: 9px; }
+  .subject-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .subject-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* Quick action row */
+  .quick-actions { display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap; }
+  .qa-btn {
+    flex: 1; min-width: 140px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .qa-btn:hover { border-color: var(--accent); background: #141e2a; }
+  .qa-icon { font-size: 20px; }
+  .qa-text { font-size: 12px; font-weight: 600; }
+  .qa-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── CHAPTERS ── */
+  #chapterScreen { padding: 28px 20px; max-width: 800px; margin: 0 auto; width: 100%; display: none; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--pill); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-family: 'Sora', sans-serif;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    margin-bottom: 22px; transition: color 0.2s, border-color 0.2s;
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--accent); }
+  .screen-title { font-size: 21px; font-weight: 700; margin-bottom: 5px; }
+  .screen-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .chapter-list { display: flex; flex-direction: column; gap: 9px; }
+  .chapter-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 15px 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .chapter-item:hover { border-color: var(--accent); background: #141e2a; }
+  .chapter-item-left { display: flex; align-items: center; gap: 11px; }
+  .chapter-num { width: 27px; height: 27px; border-radius: 7px; background: var(--pill); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .chapter-name { font-size: 13px; font-weight: 500; }
+  .chapter-arrow { color: var(--muted); font-size: 16px; }
+
+  /* ── TUTOR ── */
+  #tutorScreen { display: none; flex-direction: column; height: calc(100vh - 61px); }
+  .tutor-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 11px; background: var(--surface); flex-shrink: 0; }
+  .tutor-topic { flex: 1; }
+  .tutor-topic-label { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .tutor-topic-name { font-size: 14px; font-weight: 600; }
+  .tutor-actions { display: flex; gap: 7px; }
+  .t-btn {
+    padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--pill); color: var(--muted); font-size: 11px; font-family: 'Sora', sans-serif;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .t-btn:hover { border-color: var(--accent); color: var(--text); }
+  .t-btn.danger:hover { border-color: var(--danger); color: #fca5a5; }
+
+  .chat-area { flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+  .msg { display: flex; gap: 9px; max-width: 780px; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+  .msg.user { flex-direction: row-reverse; margin-left: auto; }
+  .msg-avatar { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .ai-avatar { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-weight: 700; }
+  .user-avatar { background: var(--pill); border: 1px solid var(--border); }
+  .msg-bubble { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 13px 15px; font-size: 13px; line-height: 1.75; max-width: calc(100% - 44px); }
+  .msg.user .msg-bubble { background: var(--pill); border-color: rgba(0,212,170,0.3); }
+  .msg-bubble h3 { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace; }
+  .msg-bubble p { margin-bottom: 7px; color: #c8dff5; }
+  .msg-bubble p:last-of-type { margin-bottom: 0; }
+  .msg-bubble strong { color: var(--accent); font-weight: 600; }
+  .msg-bubble em { color: var(--warn); font-style: italic; }
+  .msg-bubble ul { padding-left: 17px; margin-bottom: 7px; }
+  .msg-bubble li { margin-bottom: 3px; color: #c8dff5; }
+  .stage-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 11px; }
+  .stage-pill { padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; border: 1px solid; cursor: pointer; transition: all 0.2s; }
+  .pill-concept { border-color: rgba(0,212,170,0.4); color: var(--accent); background: rgba(0,212,170,0.08); }
+  .pill-mechanism { border-color: rgba(14,165,233,0.4); color: var(--accent2); background: rgba(14,165,233,0.08); }
+  .pill-clinical { border-color: rgba(245,158,11,0.4); color: var(--warn); background: rgba(245,158,11,0.08); }
+  .pill-simpler { border-color: rgba(255,100,100,0.4); color: #ff6464; background: rgba(255,100,100,0.08); }
+  .stage-pill:hover { opacity: 0.75; }
+
+  /* Trap card */
+  .trap-card {
+    background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(239,68,68,0.06));
+    border: 1px solid rgba(245,158,11,0.35); border-radius: 13px; padding: 14px 15px;
+    margin-top: 10px;
+  }
+  .trap-card-title { font-size: 11px; font-weight: 700; color: var(--warn); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .trap-card p { color: #fde68a; font-size: 13px; line-height: 1.6; margin-bottom: 6px; }
+  .trap-card p:last-child { margin-bottom: 0; }
+
+  /* Practice Q */
+  .practice-q {
+    background: rgba(14,165,233,0.07); border: 1px solid rgba(14,165,233,0.3);
+    border-radius: 13px; padding: 14px 15px; margin-top: 10px;
+  }
+  .practice-q-title { font-size: 11px; font-weight: 700; color: var(--accent2); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .practice-q p { color: #bae6fd; font-size: 13px; line-height: 1.6; margin-bottom: 6px; }
+  .pq-options { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .pq-option { padding: 8px 13px; border: 1px solid rgba(14,165,233,0.25); border-radius: 8px; font-size: 12px; color: #93c5fd; cursor: pointer; transition: all 0.2s; background: rgba(14,165,233,0.05); }
+  .pq-option:hover { border-color: var(--accent2); color: var(--text); background: rgba(14,165,233,0.12); }
+  .pq-option.correct { border-color: var(--accent); color: var(--accent); background: rgba(0,212,170,0.1); }
+  .pq-option.wrong { border-color: var(--danger); color: #fca5a5; background: rgba(239,68,68,0.1); }
+  .pq-explanation { margin-top: 9px; font-size: 12px; color: var(--muted); line-height: 1.6; padding: 9px 12px; background: var(--pill); border-radius: 8px; display: none; }
+
+  .typing { display: flex; gap: 9px; align-items: flex-start; }
+  .typing-dots { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 13px 17px; display: flex; gap: 5px; align-items: center; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0.4; animation: pulse 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.3;transform:scale(0.8);}40%{opacity:1;transform:scale(1.1);} }
+
+  .input-bar { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 9px; align-items: flex-end; flex-shrink: 0; }
+  .input-bar textarea { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 10px 13px; color: var(--text); font-family: 'Sora', sans-serif; font-size: 13px; resize: none; outline: none; max-height: 120px; min-height: 42px; transition: border-color 0.2s; line-height: 1.5; }
+  .input-bar textarea:focus { border-color: var(--accent); }
+  .input-bar textarea::placeholder { color: var(--muted); }
+  .send-btn { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg,var(--accent),var(--accent2)); border: none; cursor: pointer; color: #000; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.2s; }
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .empty-chat { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 20px; margin-top: 20px; }
+  .empty-icon { font-size: 44px; margin-bottom: 11px; }
+  .empty-title { font-size: 17px; font-weight: 600; margin-bottom: 7px; }
+  .empty-sub { font-size: 13px; color: var(--muted); max-width: 340px; margin-bottom: 22px; line-height: 1.6; }
+  .quick-asks { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+  .quick-ask { padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .quick-ask:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── WEAKNESS PANEL ── */
+  #weaknessScreen { padding: 28px 20px; max-width: 860px; margin: 0 auto; width: 100%; display: none; }
+  .weakness-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .weakness-header h2 { font-size: 20px; font-weight: 700; }
+  .weakness-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .w-btn {
+    padding: 8px 16px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--pill); color: var(--muted); font-size: 12px; font-family: 'Sora', sans-serif;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .w-btn:hover { border-color: var(--accent); color: var(--text); }
+  .w-btn.primary { background: linear-gradient(135deg,var(--accent),var(--accent2)); border: none; color: #000; font-weight: 600; }
+  .weakness-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 12px; margin-bottom: 28px; }
+  .weakness-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 16px;
+    position: relative; transition: border-color 0.2s;
+  }
+  .weakness-card:hover { border-color: rgba(245,158,11,0.4); }
+  .wc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .wc-topic { font-size: 13px; font-weight: 600; line-height: 1.4; flex: 1; }
+  .wc-subject { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; background: var(--pill); padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .wc-note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+  .wc-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .wc-date { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .wc-del { padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.07); color: #f87171; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .wc-del:hover { background: rgba(239,68,68,0.15); }
+  .empty-weakness { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-weakness .big { font-size: 40px; margin-bottom: 12px; }
+  .add-weakness-form {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; margin-bottom: 28px; display: none;
+  }
+  .add-weakness-form.open { display: block; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .form-row .form-group { flex: 1; min-width: 180px; }
+  .generated-section { margin-top: 4px; }
+  .gen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .gen-header h3 { font-size: 15px; font-weight: 600; }
+  .gen-cards { display: flex; flex-direction: column; gap: 12px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── CONCEPT EXPLAINER TOOLTIP ── */
+  #conceptTooltip {
+    position: fixed;
+    z-index: 9999;
+    max-width: 320px;
+    min-width: 220px;
+    background: #0d1520;
+    border: 1px solid rgba(0,212,170,0.45);
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,212,170,0.1);
+    padding: 0;
+    display: none;
+    animation: tooltipPop 0.2s cubic-bezier(.175,.885,.32,1.275);
+    pointer-events: auto;
+  }
+  @keyframes tooltipPop {
+    from { opacity:0; transform: scale(0.88) translateY(6px); }
+    to   { opacity:1; transform: scale(1)    translateY(0);   }
+  }
+  #conceptTooltip.visible { display: block; }
+  .ct-header {
+    padding: 10px 13px 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .ct-term {
+    font-size: 12px; font-weight: 700; color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+  }
+  .ct-close {
+    width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--pill); color: var(--muted); font-size: 13px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s; line-height: 1;
+  }
+  .ct-close:hover { border-color: var(--danger); color: #fca5a5; }
+  .ct-body { padding: 11px 13px 13px; }
+  .ct-loading {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--muted); padding: 4px 0;
+  }
+  .ct-content {
+    font-size: 12.5px; line-height: 1.7; color: #c8dff5;
+  }
+  .ct-content strong { color: var(--accent); font-weight: 600; }
+  .ct-content em { color: var(--warn); font-style: italic; }
+  .ct-content p { margin-bottom: 5px; }
+  .ct-content p:last-child { margin-bottom: 0; }
+  .ct-content ul { padding-left: 15px; }
+  .ct-content li { margin-bottom: 2px; }
+  .ct-footer {
+    padding: 7px 13px 10px;
+    display: flex; gap: 6px;
+  }
+  .ct-pill-btn {
+    padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    border: 1px solid rgba(0,212,170,0.35); color: var(--accent);
+    background: rgba(0,212,170,0.07); cursor: pointer; transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ct-pill-btn:hover { background: rgba(0,212,170,0.15); }
+
+  /* Selection highlight trigger */
+  .chat-area ::selection { background: rgba(0,212,170,0.25); color: var(--text); }
+  .chat-area ::-moz-selection { background: rgba(0,212,170,0.25); color: var(--text); }
+
+  /* Selection action bubble */
+  #selectionBubble {
+    position: fixed; z-index: 9998;
+    display: none;
+    background: linear-gradient(135deg,var(--accent),var(--accent2));
+    color: #000; font-size: 11px; font-weight: 700;
+    padding: 6px 12px; border-radius: 20px;
+    cursor: pointer; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,212,170,0.4);
+    font-family: 'Sora', sans-serif;
+    animation: bubblePop 0.15s ease;
+    user-select: none;
+  }
+  @keyframes bubblePop { from{opacity:0;transform:scale(0.8);}to{opacity:1;transform:scale(1);} }
+  #selectionBubble.visible { display: block; }
+
+  /* ── LIBRARY SCREEN ── */
+  #libraryScreen { padding: 28px 20px; max-width: 860px; margin: 0 auto; width: 100%; display: none; }
+  .library-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .library-header h2 { font-size: 20px; font-weight: 700; }
+  .lib-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .lib-stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 16px; font-size: 12px; color: var(--muted);
+  }
+  .lib-stat strong { color: var(--accent); font-size: 16px; display: block; font-family: 'JetBrains Mono', monospace; }
+  .lib-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .lib-tab {
+    padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card); color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: 'Sora', sans-serif;
+  }
+  .lib-tab.active { background: linear-gradient(135deg,var(--accent),var(--accent2)); border-color: transparent; color: #000; }
+  .lib-tab:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+  .lib-section { display: none; }
+  .lib-section.active { display: block; }
+  .lib-empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .lib-empty .big { font-size: 36px; margin-bottom: 10px; }
+  .lib-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 13px;
+    padding: 15px 17px; margin-bottom: 10px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .lib-item:hover { border-color: rgba(0,212,170,0.3); background: #141e2a; }
+  .lib-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .lib-item-title { font-size: 13px; font-weight: 600; flex: 1; }
+  .lib-item-meta { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+  .lib-item-sub { font-size: 11px; color: var(--muted); }
+  .lib-item-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .lib-action-btn {
+    padding: 4px 11px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--pill); color: var(--muted);
+    cursor: pointer; transition: all 0.15s; font-family: 'Sora', sans-serif;
+  }
+  .lib-action-btn:hover { border-color: var(--accent); color: var(--text); }
+  .lib-action-btn.danger:hover { border-color: var(--danger); color: #fca5a5; }
+  .lib-expanded {
+    background: #0a1520; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin-top: 10px; display: none;
+  }
+  .lib-expanded.open { display: block; }
+
+  /* Save indicator toast */
+  #saveToast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg,var(--accent),var(--accent2));
+    color: #000; font-size: 12px; font-weight: 700; padding: 9px 20px;
+    border-radius: 20px; z-index: 9999; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+    font-family: 'Sora', sans-serif;
+  }
+  #saveToast.show { opacity: 1; }
+
+  @media(max-width:600px) {
+    #homeScreen { padding: 20px 14px; }
+    .subject-grid { grid-template-columns: 1fr 1fr; }
+    header { padding: 12px 16px; }
+    .hbtn span { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="app">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="logo" onclick="showHome()">
+      <div class="logo-icon">💉</div>
+      Bolus<span>Mind</span>
+    </div>
+    <div class="header-right">
+      <button class="hbtn" onclick="showLibrary()">📚 <span>Library</span></button>
+      <button class="hbtn" onclick="showWeakness()">⚠️ <span>Weaknesses</span></button>
+      <button class="hbtn" id="apiBtn" onclick="openApiModal()">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="apiLabel">Connect API</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- HOME -->
+    <div id="homeScreen">
+      <div class="hero">
+        <h1>Your <em>BolusMind</em><br>for Nursing</h1>
+        <p>Ask any doubt, track your weaknesses, and get personalized trap cards & practice questions generated just for you.</p>
+      </div>
+
+      <div id="noApiBanner" class="no-api-banner" style="display:none;">
+        <p>⚡ Connect your Claude API key to start learning. It's free to get one from Anthropic.</p>
+        <button onclick="openApiModal()">Connect Now</button>
+      </div>
+
+      <div class="doubt-bar">
+        <input type="text" id="quickDoubt" placeholder="Type any doubt... e.g. 'What is cardiac output?'" />
+        <button onclick="askQuickDoubt()">Ask Tutor →</button>
+      </div>
+
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="showWeakness()">
+          <div class="qa-icon">⚠️</div>
+          <div>
+            <div class="qa-text">My Weaknesses</div>
+            <div class="qa-sub" id="weakCountLabel">0 topics tracked</div>
+          </div>
+        </div>
+        <div class="qa-btn" onclick="generateFromWeakness()">
+          <div class="qa-icon">🃏</div>
+          <div>
+            <div class="qa-text">Trap Cards</div>
+            <div class="qa-sub">Based on your weak areas</div>
+          </div>
+        </div>
+        <div class="qa-btn" onclick="generateQuestions()">
+          <div class="qa-icon">📝</div>
+          <div>
+            <div class="qa-text">Practice Questions</div>
+            <div class="qa-sub">MCQs from weaknesses</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">📚 Subjects — ABVMU Sem 4</div>
+      <div class="subject-grid" id="subjectGrid"></div>
+    </div>
+
+    <!-- CHAPTERS -->
+    <div id="chapterScreen">
+      <button class="back-btn" onclick="showHome()">← Back</button>
+      <div class="screen-title" id="chapterScreenTitle"></div>
+      <div class="screen-sub" id="chapterScreenSub"></div>
+      <div class="chapter-list" id="chapterList"></div>
+    </div>
+
+    <!-- TUTOR -->
+    <div id="tutorScreen">
+      <div class="tutor-header">
+        <button class="back-btn" style="margin-bottom:0;" id="tutorBackBtn">←</button>
+        <div class="tutor-topic">
+          <div class="tutor-topic-label">TOPIC</div>
+          <div class="tutor-topic-name" id="tutorTopicName">Loading...</div>
+        </div>
+        <div class="tutor-actions">
+          <button class="t-btn" onclick="markWeakness()">⚠️ Mark Weak</button>
+          <button class="t-btn" onclick="requestTrapCard()">🃏 Trap Card</button>
+          <button class="t-btn" onclick="requestPracticeQ()">📝 Question</button>
+          <button class="t-btn" id="saveChatBtn" onclick="saveCurrentChat()" title="Save this chat session">💾 Save</button>
+        </div>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+      <div class="input-bar">
+        <textarea id="chatInput" rows="1" placeholder="Ask your doubt here..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendFromInput()">↑</button>
+      </div>
+    </div>
+
+    <!-- WEAKNESS -->
+    <div id="weaknessScreen">
+      <button class="back-btn" onclick="showHome()">← Back to Home</button>
+      <div class="weakness-header">
+        <h2>⚠️ My Weakness Tracker</h2>
+        <div class="weakness-actions">
+          <button class="w-btn" onclick="toggleAddForm()">+ Add Weakness</button>
+          <button class="w-btn" onclick="generateFromWeakness()">🃏 Generate Trap Cards</button>
+          <button class="w-btn" onclick="generateQuestions()">📝 Generate Questions</button>
+        </div>
+      </div>
+
+      <!-- Add form -->
+      <div class="add-weakness-form" id="addWeaknessForm">
+        <div class="section-label" style="margin-bottom:14px;">Add New Weakness</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Topic / Chapter</label>
+            <input class="form-input" id="wTopic" placeholder="e.g. Cardiac Glycosides" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input class="form-input" id="wSubject" placeholder="e.g. Pharmacology" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label class="form-label">Note (what confuses you?)</label>
+          <input class="form-input" id="wNote" placeholder="e.g. I confuse the mechanism of digoxin with quinidine" />
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px;">
+          <button class="btn-primary" onclick="saveWeakness()">Save Weakness</button>
+          <button class="btn-ghost" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div id="weaknessList"></div>
+
+      <!-- Generated content -->
+      <div id="generatedSection" class="generated-section" style="display:none;">
+        <div class="gen-header">
+          <h3 id="genTitle">Generated Content</h3>
+          <button class="w-btn" onclick="document.getElementById('generatedSection').style.display='none'">✕ Close</button>
+        </div>
+        <div class="gen-cards" id="genCards"></div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="libraryScreen">
+      <button class="back-btn" onclick="showHome()">← Back to Home</button>
+      <div class="library-header">
+        <h2>📚 My Study Library</h2>
+        <button class="w-btn" onclick="clearAllLibrary()" style="color:#fca5a5;border-color:rgba(239,68,68,0.3);">🗑️ Clear All</button>
+      </div>
+      <div class="lib-stats" id="libStats"></div>
+      <div class="lib-tabs">
+        <button class="lib-tab active" onclick="switchLibTab('chats', this)">💬 Saved Chats</button>
+        <button class="lib-tab" onclick="switchLibTab('trapcards', this)">🃏 Trap Cards</button>
+        <button class="lib-tab" onclick="switchLibTab('mcqs', this)">📝 MCQ Sets</button>
+      </div>
+      <div class="lib-section active" id="libChats"></div>
+      <div class="lib-section" id="libTrapcards"></div>
+      <div class="lib-section" id="libMcqs"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Save Toast -->
+<div id="saveToast">✓ Saved to Library</div>
+
+<!-- ── CONCEPT EXPLAINER TOOLTIP ── -->
+<div id="conceptTooltip">
+  <div class="ct-header">
+    <div class="ct-term" id="ctTerm">...</div>
+    <button class="ct-close" onclick="closeConceptTooltip()">✕</button>
+  </div>
+  <div class="ct-body">
+    <div class="ct-loading" id="ctLoading">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span>Explaining...</span>
+    </div>
+    <div class="ct-content" id="ctContent" style="display:none;"></div>
+  </div>
+  <div class="ct-footer" id="ctFooter" style="display:none;">
+    <button class="ct-pill-btn" onclick="askInChat()">💬 Ask in Chat</button>
+    <button class="ct-pill-btn" onclick="explainSimpler()">🔽 Simpler</button>
+  </div>
+</div>
+
+<!-- ── SELECTION BUBBLE ── -->
+<div id="selectionBubble" onclick="explainSelected()">🔍 Explain This</div>
+
+<!-- ── API MODAL ── -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h2>🔑 Connect Your API</h2>
+    <p>Enter your Anthropic API key and choose a model. Your key is saved locally in your browser — never sent anywhere except directly to Anthropic.</p>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input class="form-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Model</label>
+      <select class="form-input form-select" id="modelSelect">
+        <option value="claude-sonnet-4-20250514">Claude Sonnet 4 — Best for learning (recommended)</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 — Most powerful</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — Fastest & cheapest</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveApiKey()">Save & Connect</button>
+      <button class="btn-ghost" onclick="closeApiModal()">Cancel</button>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:var(--pill);border-radius:9px;">
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;">
+        Get a free API key at <strong style="color:var(--accent);">console.anthropic.com</strong> → API Keys → Create Key.<br>
+        Your key is stored only in <strong style="color:var(--text);">localStorage</strong> on this device.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── WEAKNESS MODAL (mark from tutor) ── -->
+<div class="modal-overlay" id="markWeakModal">
+  <div class="modal">
+    <h2>⚠️ Mark as Weakness</h2>
+    <p>Save this topic to your weakness tracker so BolusMind can generate targeted trap cards and practice questions.</p>
+    <div class="form-group">
+      <label class="form-label">Topic</label>
+      <input class="form-input" id="mwTopic" readonly />
+    </div>
+    <div class="form-group">
+      <label class="form-label">What confuses you? (optional)</label>
+      <input class="form-input" id="mwNote" placeholder="e.g. I always confuse the dosage timing" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="confirmMarkWeakness()">Save Weakness</button>
+      <button class="btn-ghost" onclick="closeMarkWeakModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+const SUBJECTS = [
+  { id:'pharmacology', icon:'💊', name:'Pharmacology I & II', meta:'8 units · 18 chapters', chapters:['Introduction to Pharmacology & Drug Mechanisms','Autonomic Nervous System Drugs','Cardiovascular Drugs — Antihypertensives','Cardiovascular Drugs — Cardiac Glycosides & Antiarrhythmics','Diuretics','CNS Drugs — Sedatives, Hypnotics, Anxiolytics','CNS Drugs — Antiepileptics','CNS Drugs — Antipsychotics & Antidepressants','Analgesics — NSAIDs & Opioids','Antimicrobials — Antibiotics (Penicillin, Cephalosporins)','Antimicrobials — Antibiotics (Macrolides, Tetracyclines, Aminoglycosides)','Antifungal, Antiviral, Antiparasitic Drugs','GI Drugs — Antiulcer, Antiemetics, Laxatives','Respiratory Drugs — Bronchodilators, Antitussives','Hormones — Insulin, Oral Hypoglycemics','Hormones — Thyroid, Corticosteroids','Chemotherapy — Anticancer Drugs','Drug Calculations & Routes of Administration'] },
+  { id:'pathology', icon:'🔬', name:'Pathology I & II', meta:'6 units · 18 chapters', chapters:['Cell Injury, Adaptation & Death','Inflammation — Acute & Chronic','Repair, Regeneration & Wound Healing','Neoplasia — Benign vs Malignant Tumors','Haematology — Anaemias & Blood Disorders','Haematology — Leukaemias & Lymphomas','Cardiovascular Pathology','Respiratory Pathology','Gastrointestinal Pathology','Liver, Gallbladder & Pancreas Pathology','Renal Pathology','Endocrine Pathology','Nervous System Pathology','Musculoskeletal Pathology','Reproductive System Pathology','Skin Pathology','Infectious Disease Pathology','Immunopathology & Autoimmune Diseases'] },
+  { id:'adult_health', icon:'🏥', name:'Adult Health Nursing II', meta:'5 units · 18 chapters', chapters:['Nursing Management of Cardiac Disorders','Nursing Management of Respiratory Disorders','Nursing Management of GI Disorders','Nursing Management of Renal & Urinary Disorders','Nursing Management of Neurological Disorders','Nursing Management of Musculoskeletal Disorders','Nursing Management of Endocrine Disorders','Nursing Management of Infectious Diseases','Nursing Management of Cancer Patients','Pre-operative & Post-operative Nursing Care','Fluid & Electrolyte Imbalance Management','Shock — Types, Assessment, Management','ICU Nursing & Critical Care Concepts','Burns Management','Wound Care & Dressing Techniques','Rehabilitation Nursing','Nutrition in Health & Disease','Pain Management Principles'] },
+  { id:'genetics', icon:'🧬', name:'Genetics', meta:'4 units · 14 chapters', chapters:['Basic Genetics — DNA, RNA, Chromosomes','Mendelian Inheritance Patterns','Autosomal Dominant & Recessive Disorders','X-linked Inheritance','Chromosomal Abnormalities','Genetic Counselling & Screening','Mutations & Teratogens','Molecular Genetics & Gene Expression','Genetic Disorders — Down Syndrome, Turner, Klinefelter','Cancer Genetics','Pharmacogenomics','Epigenetics','Prenatal Diagnosis Techniques','Gene Therapy — Concepts'] },
+  { id:'nutrition', icon:'🥗', name:'Nutrition & Dietetics', meta:'3 units · 12 chapters', chapters:['Macronutrients — Carbohydrates, Proteins, Fats','Micronutrients — Vitamins (Fat & Water Soluble)','Micronutrients — Minerals & Trace Elements','Water & Electrolytes','Energy Requirements & BMR','Nutritional Assessment Methods','Malnutrition — PEM, Marasmus, Kwashiorkor','Therapeutic Diets','Nutrition in Pregnancy & Lactation','Nutrition in Paediatrics','Nutrition in Chronic Diseases','Food Safety & Hygiene'] },
+  { id:'community', icon:'🏘️', name:'Community Health Nursing', meta:'4 units · 16 chapters', chapters:['Concepts of Community Health','Epidemiology Basics','National Health Programs','Immunisation & Vaccines','Communicable Disease Control','Non-communicable Disease Control','Primary Health Care & PHC Centres','ASHA, ANM & Healthcare Workforce','School Health Program','Occupational Health','Environmental Health & Sanitation','Water Supply & Sewage Disposal','Family Planning Methods','Maternal & Child Health Programs','Disaster Management in Community','Health Education & Communication'] }
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let apiKey = localStorage.getItem('tradeai_key') || '';
+let selectedModel = localStorage.getItem('tradeai_model') || 'claude-sonnet-4-20250514';
+let currentSubject = null;
+let currentChapter = null;
+let conversationHistory = [];
+let isLoading = false;
+let weaknesses = JSON.parse(localStorage.getItem('tradeai_weaknesses') || '[]');
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init() {
+  // Render subjects
+  const grid = document.getElementById('subjectGrid');
+  grid.innerHTML = SUBJECTS.map(s => `
+    <div class="subject-card" onclick="openSubject('${s.id}')">
+      <div class="subject-icon">${s.icon}</div>
+      <div class="subject-name">${s.name}</div>
+      <div class="subject-meta">${s.meta}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('quickDoubt').addEventListener('keydown', e => { if(e.key==='Enter') askQuickDoubt(); });
+
+  updateApiStatus();
+  updateWeakCount();
+
+  if (!apiKey) {
+    document.getElementById('noApiBanner').style.display = 'flex';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  API MODAL
+// ══════════════════════════════════════════════
+function openApiModal() {
+  document.getElementById('apiKeyInput').value = apiKey;
+  document.getElementById('modelSelect').value = selectedModel;
+  document.getElementById('apiModal').classList.add('open');
+}
+function closeApiModal() { document.getElementById('apiModal').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  const m = document.getElementById('modelSelect').value;
+  if (!k) { alert('Please enter your API key.'); return; }
+  apiKey = k;
+  selectedModel = m;
+  localStorage.setItem('tradeai_key', k);
+  localStorage.setItem('tradeai_model', m);
+  updateApiStatus();
+  document.getElementById('noApiBanner').style.display = 'none';
+  closeApiModal();
+}
+function updateApiStatus() {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('apiLabel');
+  if (apiKey) {
+    dot.classList.add('on');
+    label.textContent = 'API Connected';
+    document.getElementById('apiBtn').classList.add('connected');
+  } else {
+    dot.classList.remove('on');
+    label.textContent = 'Connect API';
+    document.getElementById('apiBtn').classList.remove('connected');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function showHome() {
+  document.getElementById('homeScreen').style.display = '';
+  document.getElementById('chapterScreen').style.display = 'none';
+  document.getElementById('tutorScreen').style.display = 'none';
+  document.getElementById('weaknessScreen').style.display = 'none';
+  document.getElementById('libraryScreen').style.display = 'none';
+  updateWeakCount();
+}
+function openSubject(id) {
+  const subj = SUBJECTS.find(s => s.id === id);
+  if (!subj) return;
+  currentSubject = subj;
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('chapterScreen').style.display = 'block';
+  document.getElementById('tutorScreen').style.display = 'none';
+  document.getElementById('weaknessScreen').style.display = 'none';
+  document.getElementById('chapterScreenTitle').textContent = subj.icon + ' ' + subj.name;
+  document.getElementById('chapterScreenSub').textContent = 'Select a chapter to start learning';
+  const list = document.getElementById('chapterList');
+  list.innerHTML = subj.chapters.map((ch, i) => `
+    <div class="chapter-item" onclick="openTutor('${subj.name}','${ch.replace(/'/g,"\\'")}')">
+      <div class="chapter-item-left">
+        <div class="chapter-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="chapter-name">${ch}</div>
+      </div>
+      <div class="chapter-arrow">›</div>
+    </div>
+  `).join('');
+}
+function openTutor(subjectName, chapterName, prefilledDoubt='') {
+  currentChapter = { subject: subjectName, chapter: chapterName };
+  conversationHistory = [];
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('chapterScreen').style.display = 'none';
+  document.getElementById('tutorScreen').style.display = 'flex';
+  document.getElementById('weaknessScreen').style.display = 'none';
+  document.getElementById('tutorTopicName').textContent = chapterName;
+  document.getElementById('tutorBackBtn').onclick = currentSubject
+    ? () => openSubject(currentSubject.id) : () => showHome();
+  // Reset save button
+  const sb = document.getElementById('saveChatBtn');
+  sb.classList.remove('saved');
+  sb.textContent = '💾 Save';
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = `
+    <div class="empty-chat" id="emptyChat">
+      <div class="empty-icon">🎓</div>
+      <div class="empty-title">Ask Your First Question</div>
+      <div class="empty-sub">BolusMind will explain <strong>${chapterName}</strong> step by step.</div>
+      <div class="quick-asks">
+        <div class="quick-ask" onclick="sendMessage('Explain this topic to me like a complete beginner')">📖 Explain from scratch</div>
+        <div class="quick-ask" onclick="sendMessage('What is the core mechanism I must know?')">⚙️ Core mechanism</div>
+        <div class="quick-ask" onclick="sendMessage('Give me a clinical nursing scenario for this')">🏥 Clinical scenario</div>
+        <div class="quick-ask" onclick="sendMessage('What are the most important exam points?')">📝 Exam key points</div>
+      </div>
+    </div>
+  `;
+  if (prefilledDoubt) setTimeout(() => sendMessage(prefilledDoubt), 300);
+}
+function askQuickDoubt() {
+  const val = document.getElementById('quickDoubt').value.trim();
+  if (!val) return;
+  currentSubject = null;
+  openTutor('General Nursing', val, val);
+  document.getElementById('quickDoubt').value = '';
+}
+
+// ══════════════════════════════════════════════
+//  CHAT
+// ══════════════════════════════════════════════
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendFromInput();} }
+function sendFromInput() {
+  const inp = document.getElementById('chatInput');
+  const val = inp.value.trim();
+  if (!val || isLoading) return;
+  inp.value=''; inp.style.height='auto';
+  sendMessage(val);
+}
+
+function sendMessage(text) {
+  if (isLoading) return;
+  if (!apiKey) { openApiModal(); return; }
+  const empty = document.getElementById('emptyChat');
+  if (empty) empty.remove();
+  appendMessage('user', text);
+  conversationHistory.push({ role:'user', content:text });
+  const typingId = 'typing_'+Date.now();
+  const chatArea = document.getElementById('chatArea');
+  chatArea.insertAdjacentHTML('beforeend',`
+    <div class="typing" id="${typingId}">
+      <div class="msg-avatar ai-avatar">B</div>
+      <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  `);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  callClaude(text, 'tutor').then(reply => {
+    document.getElementById(typingId)?.remove();
+    appendMessage('ai', reply);
+    conversationHistory.push({ role:'assistant', content:reply });
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }).catch(err => {
+    document.getElementById(typingId)?.remove();
+    appendMessage('ai','⚠️ Error: '+err.message+'\n\nPlease check your API key in the Connect API button.');
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  });
+}
+
+function appendMessage(role, text, extra='') {
+  const chatArea = document.getElementById('chatArea');
+  const isAI = role==='ai';
+  const formatted = isAI ? formatAIResponse(text) : `<p>${escapeHtml(text)}</p>`;
+  const pillsHTML = isAI ? `
+    <div class="stage-pills">
+      <div class="stage-pill pill-concept" onclick="sendMessage('Explain the basic concept more simply')">💡 Simpler</div>
+      <div class="stage-pill pill-mechanism" onclick="sendMessage('Explain the mechanism in more detail')">⚙️ Mechanism</div>
+      <div class="stage-pill pill-clinical" onclick="sendMessage('Give me a clinical nursing application or case')">🏥 Clinical</div>
+      <div class="stage-pill pill-simpler" onclick="sendMessage('Teach me like I am a complete beginner')">🐣 ELI5</div>
+    </div>
+  ` : '';
+  chatArea.insertAdjacentHTML('beforeend',`
+    <div class="msg ${isAI?'ai':'user'}">
+      <div class="msg-avatar ${isAI?'ai-avatar':'user-avatar'}">${isAI?'T':'👤'}</div>
+      <div class="msg-bubble">${formatted}${isAI?pillsHTML:''}${extra}</div>
+    </div>
+  `);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// ══════════════════════════════════════════════
+//  TRAP CARD & PRACTICE Q (from tutor)
+// ══════════════════════════════════════════════
+function requestTrapCard() {
+  if (!apiKey) { openApiModal(); return; }
+  const topic = currentChapter?.chapter || 'this topic';
+  const typingId = 'typing_tc_'+Date.now();
+  const chatArea = document.getElementById('chatArea');
+  chatArea.insertAdjacentHTML('beforeend',`<div class="typing" id="${typingId}"><div class="msg-avatar ai-avatar">B</div><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  callClaude(`Generate a TRAP CARD for the topic: "${topic}". Format as JSON exactly:
+{"trap":"the common mistake students make","why":"why it's wrong","correct":"what is actually correct","memory":"one-line memory trick"}`, 'trap')
+  .then(raw => {
+    document.getElementById(typingId)?.remove();
+    let data;
+    try { data = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) { appendMessage('ai', raw); return; }
+    const html = `<div class="trap-card">
+      <div class="trap-card-title">🪤 Trap Card — ${escapeHtml(topic)}</div>
+      <p><strong style="color:#fde68a;">⚠️ Common Mistake:</strong> ${escapeHtml(data.trap||'')}</p>
+      <p><strong style="color:#fca5a5;">❌ Why Wrong:</strong> ${escapeHtml(data.why||'')}</p>
+      <p><strong style="color:#86efac;">✅ Correct:</strong> ${escapeHtml(data.correct||'')}</p>
+      <p><strong style="color:#c4b5fd;">🧠 Memory Trick:</strong> ${escapeHtml(data.memory||'')}</p>
+    </div>`;
+    chatArea.insertAdjacentHTML('beforeend',`<div class="msg ai" style="animation:fadeUp 0.3s ease;"><div class="msg-avatar ai-avatar">B</div><div class="msg-bubble">${html}</div></div>`);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    // Auto-save single trap card
+    autoSaveTrapCards(topic, currentChapter?.subject||'General', [data]);
+  }).catch(err => { document.getElementById(typingId)?.remove(); appendMessage('ai','⚠️ '+err.message); });
+}
+
+function requestPracticeQ() {
+  if (!apiKey) { openApiModal(); return; }
+  const topic = currentChapter?.chapter || 'this topic';
+  const typingId = 'typing_pq_'+Date.now();
+  const chatArea = document.getElementById('chatArea');
+  chatArea.insertAdjacentHTML('beforeend',`<div class="typing" id="${typingId}"><div class="msg-avatar ai-avatar">B</div><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  callClaude(`Generate 1 ABVMU-style MCQ for nursing students on: "${topic}". Format as JSON:
+{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct":0,"explanation":"..."}
+correct is 0-indexed.`, 'trap')
+  .then(raw => {
+    document.getElementById(typingId)?.remove();
+    let data;
+    try { data = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) { appendMessage('ai', raw); return; }
+    const qId = 'pq_'+Date.now();
+    const opts = (data.options||[]).map((o,i)=>`<div class="pq-option" id="${qId}_opt${i}" onclick="checkAnswer('${qId}',${i},${data.correct||0},'${escapeJs(data.explanation||'')}')">${escapeHtml(o)}</div>`).join('');
+    const html = `<div class="practice-q">
+      <div class="practice-q-title">📝 Practice Question — ${escapeHtml(topic)}</div>
+      <p>${escapeHtml(data.question||'')}</p>
+      <div class="pq-options">${opts}</div>
+      <div class="pq-explanation" id="${qId}_exp">${escapeHtml(data.explanation||'')}</div>
+    </div>`;
+    chatArea.insertAdjacentHTML('beforeend',`<div class="msg ai" style="animation:fadeUp 0.3s ease;"><div class="msg-avatar ai-avatar">B</div><div class="msg-bubble">${html}</div></div>`);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    // Auto-save MCQ
+    autoSaveMCQs(topic, currentChapter?.subject||'General', [data]);
+  }).catch(err => { document.getElementById(typingId)?.remove(); appendMessage('ai','⚠️ '+err.message); });
+}
+
+function checkAnswer(qId, chosen, correct, explanation) {
+  const opts = document.querySelectorAll(`[id^="${qId}_opt"]`);
+  opts.forEach((el,i) => {
+    el.style.pointerEvents='none';
+    if(i===correct) el.classList.add('correct');
+    else if(i===chosen && chosen!==correct) el.classList.add('wrong');
+  });
+  const exp = document.getElementById(qId+'_exp');
+  if(exp) exp.style.display='block';
+}
+
+// ══════════════════════════════════════════════
+//  WEAKNESS SYSTEM
+// ══════════════════════════════════════════════
+function saveWeaknessData() {
+  localStorage.setItem('tradeai_weaknesses', JSON.stringify(weaknesses));
+  updateWeakCount();
+}
+function updateWeakCount() {
+  document.getElementById('weakCountLabel').textContent = weaknesses.length + ' topic' + (weaknesses.length!==1?'s':'') + ' tracked';
+}
+
+function markWeakness() {
+  const topic = currentChapter?.chapter || '';
+  document.getElementById('mwTopic').value = topic;
+  document.getElementById('mwNote').value = '';
+  document.getElementById('markWeakModal').classList.add('open');
+}
+function closeMarkWeakModal() { document.getElementById('markWeakModal').classList.remove('open'); }
+function confirmMarkWeakness() {
+  const topic = document.getElementById('mwTopic').value.trim();
+  const note = document.getElementById('mwNote').value.trim();
+  if (!topic) return;
+  const exists = weaknesses.find(w => w.topic===topic);
+  if (exists) { alert('Already in your weakness list!'); closeMarkWeakModal(); return; }
+  weaknesses.push({ id: Date.now(), topic, subject: currentChapter?.subject||'', note, date: new Date().toLocaleDateString('en-IN') });
+  saveWeaknessData();
+  closeMarkWeakModal();
+  // Show feedback
+  const chatArea = document.getElementById('chatArea');
+  chatArea.insertAdjacentHTML('beforeend',`<div class="msg ai" style="animation:fadeUp 0.3s ease;"><div class="msg-avatar ai-avatar">B</div><div class="msg-bubble"><p style="color:var(--warn);">⚠️ <strong>Added to Weakness Tracker!</strong> "${escapeHtml(topic)}" is now saved. Go to <em>My Weaknesses</em> to generate trap cards and practice questions.</p></div></div>`);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showWeakness() {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('chapterScreen').style.display = 'none';
+  document.getElementById('tutorScreen').style.display = 'none';
+  document.getElementById('weaknessScreen').style.display = 'block';
+  document.getElementById('libraryScreen').style.display = 'none';
+  renderWeaknessList();
+}
+
+function renderWeaknessList() {
+  const container = document.getElementById('weaknessList');
+  if (weaknesses.length === 0) {
+    container.innerHTML = `<div class="empty-weakness"><div class="big">🎯</div><p>No weaknesses tracked yet.<br>While studying, tap <strong>⚠️ Mark Weak</strong> on any topic to add it here.</p></div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div class="section-label" style="margin-bottom:14px;">${weaknesses.length} weakness${weaknesses.length!==1?'es':''} tracked</div>
+    <div class="weakness-grid">
+      ${weaknesses.map(w=>`
+        <div class="weakness-card">
+          <div class="wc-top">
+            <div class="wc-topic">${escapeHtml(w.topic)}</div>
+            ${w.subject?`<div class="wc-subject">${escapeHtml(w.subject)}</div>`:''}
+          </div>
+          ${w.note?`<div class="wc-note">${escapeHtml(w.note)}</div>`:''}
+          <div class="wc-bottom">
+            <div class="wc-date">${w.date||''}</div>
+            <button class="wc-del" onclick="deleteWeakness(${w.id})">✕ Remove</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function deleteWeakness(id) {
+  weaknesses = weaknesses.filter(w => w.id !== id);
+  saveWeaknessData();
+  renderWeaknessList();
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('addWeaknessForm');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) { document.getElementById('wTopic').focus(); }
+}
+
+function saveWeakness() {
+  const topic = document.getElementById('wTopic').value.trim();
+  const subject = document.getElementById('wSubject').value.trim();
+  const note = document.getElementById('wNote').value.trim();
+  if (!topic) { alert('Please enter a topic.'); return; }
+  weaknesses.push({ id: Date.now(), topic, subject, note, date: new Date().toLocaleDateString('en-IN') });
+  saveWeaknessData();
+  document.getElementById('wTopic').value='';
+  document.getElementById('wSubject').value='';
+  document.getElementById('wNote').value='';
+  document.getElementById('addWeaknessForm').classList.remove('open');
+  renderWeaknessList();
+}
+
+// ══════════════════════════════════════════════
+//  GENERATE FROM WEAKNESSES
+// ══════════════════════════════════════════════
+async function generateFromWeakness() {
+  if (!apiKey) { openApiModal(); return; }
+  if (weaknesses.length === 0) {
+    showWeakness();
+    alert('No weaknesses tracked yet! Mark topics as weak while studying first.');
+    return;
+  }
+  showWeakness();
+  document.getElementById('generatedSection').style.display = 'block';
+  document.getElementById('genTitle').textContent = '🃏 Trap Cards — Based on Your Weaknesses';
+  document.getElementById('genCards').innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);">Generating trap cards...<div style="display:flex;gap:5px;justify-content:center;margin-top:12px;"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+
+  const topicList = weaknesses.map(w=>`- ${w.topic}${w.subject?' ('+w.subject+')':''}${w.note?': '+w.note:''}`).join('\n');
+
+  try {
+    const raw = await callClaude(`You are a nursing exam expert. Based on these student weaknesses:\n${topicList}\n\nGenerate ${Math.min(weaknesses.length,5)} trap cards as a JSON array:
+[{"topic":"...","trap":"common mistake","why":"why wrong","correct":"correct info","memory":"memory trick"}]
+Return ONLY valid JSON array, no other text.`, 'trap');
+    let cards;
+    try { cards = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) {
+      document.getElementById('genCards').innerHTML = `<div class="msg-bubble">${formatAIResponse(raw)}</div>`;
+      return;
+    }
+    document.getElementById('genCards').innerHTML = cards.map(c=>`
+      <div class="trap-card">
+        <div class="trap-card-title">🪤 ${escapeHtml(c.topic||'Trap Card')}</div>
+        <p><strong style="color:#fde68a;">⚠️ Common Mistake:</strong> ${escapeHtml(c.trap||'')}</p>
+        <p><strong style="color:#fca5a5;">❌ Why Wrong:</strong> ${escapeHtml(c.why||'')}</p>
+        <p><strong style="color:#86efac;">✅ Correct:</strong> ${escapeHtml(c.correct||'')}</p>
+        <p><strong style="color:#c4b5fd;">🧠 Memory Trick:</strong> ${escapeHtml(c.memory||'')}</p>
+      </div>
+    `).join('');
+    // Auto-save trap cards from weakness generator
+    autoSaveTrapCards('Weakness Set', 'Mixed', cards);
+  } catch(err) {
+    document.getElementById('genCards').innerHTML = `<div style="color:#fca5a5;padding:16px;">Error: ${err.message}</div>`;
+  }
+}
+
+async function generateQuestions() {
+  if (!apiKey) { openApiModal(); return; }
+  if (weaknesses.length === 0) {
+    showWeakness();
+    alert('No weaknesses tracked yet! Mark topics as weak while studying first.');
+    return;
+  }
+  showWeakness();
+  document.getElementById('generatedSection').style.display = 'block';
+  document.getElementById('genTitle').textContent = '📝 Practice Questions — Based on Your Weaknesses';
+  document.getElementById('genCards').innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);">Generating questions...<div style="display:flex;gap:5px;justify-content:center;margin-top:12px;"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+
+  const topicList = weaknesses.map(w=>`- ${w.topic}${w.subject?' ('+w.subject+')':''}`).join('\n');
+
+  try {
+    const raw = await callClaude(`You are an ABVMU nursing exam expert. Based on these weak topics:\n${topicList}\n\nGenerate ${Math.min(weaknesses.length,5)} MCQ questions as JSON array:
+[{"topic":"...","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct":0,"explanation":"..."}]
+correct is 0-indexed. Return ONLY valid JSON array.`, 'trap');
+    let questions;
+    try { questions = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) {
+      document.getElementById('genCards').innerHTML = `<div class="msg-bubble">${formatAIResponse(raw)}</div>`;
+      return;
+    }
+    document.getElementById('genCards').innerHTML = questions.map((q,qi)=>{
+      const qId='genq_'+Date.now()+'_'+qi;
+      const opts = (q.options||[]).map((o,i)=>`<div class="pq-option" id="${qId}_opt${i}" onclick="checkAnswer('${qId}',${i},${q.correct||0},'${escapeJs(q.explanation||'')}')">${escapeHtml(o)}</div>`).join('');
+      return `<div class="practice-q">
+        <div class="practice-q-title">📝 ${escapeHtml(q.topic||'Question '+(qi+1))}</div>
+        <p>${escapeHtml(q.question||'')}</p>
+        <div class="pq-options">${opts}</div>
+        <div class="pq-explanation" id="${qId}_exp">${escapeHtml(q.explanation||'')}</div>
+      </div>`;
+    }).join('');
+    // Auto-save MCQ set
+    autoSaveMCQs('Weakness Set', 'Mixed', questions);
+  } catch(err) {
+    document.getElementById('genCards').innerHTML = `<div style="color:#fca5a5;padding:16px;">Error: ${err.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CLAUDE API
+// ══════════════════════════════════════════════
+async function callClaude(userMessage, mode='tutor') {
+  if (!apiKey) throw new Error('No API key. Please connect your API first.');
+
+  const subject = currentChapter?.subject || 'General Nursing';
+  const chapter = currentChapter?.chapter || userMessage;
+
+  let systemPrompt = '';
+  if (mode==='tutor') {
+    systemPrompt = `You are BolusMind — a brilliant, patient nursing tutor for ABVMU B.Sc. Nursing Semester 4 students in India.
+CURRENT TOPIC: ${subject} → ${chapter}
+STYLE: Simple → Mechanism → Clinical application → Analogy → Exam points.
+FORMAT: **bold** key terms, *italic* clinical notes, ## headers, - bullet points. Keep it readable on mobile.
+RULES: Never be boring. Always give an analogy. Redirect if off-topic.`;
+  } else {
+    systemPrompt = `You are a nursing exam expert for ABVMU. Return ONLY valid JSON as instructed. No explanation, no markdown code fences, no extra text.`;
+  }
+
+  const messages = mode==='tutor'
+    ? [...conversationHistory.slice(-10)]
+    : [{ role:'user', content: userMessage }];
+
+  if (mode==='tutor') {
+    // already pushed to conversationHistory before calling
+  }
+
+  const body = {
+    model: selectedModel,
+    max_tokens: mode==='tutor' ? 1000 : 2000,
+    system: systemPrompt,
+    messages: mode==='tutor' ? messages : [{ role:'user', content: userMessage }]
+  };
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(()=>({}));
+    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n') || 'No response.';
+}
+
+// ══════════════════════════════════════════════
+//  FORMATTING
+// ══════════════════════════════════════════════
+function formatAIResponse(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  html = html.replace(/^###\s(.+)$/gm,'<h3>$1</h3>');
+  html = html.replace(/^##\s(.+)$/gm,'<h3>$1</h3>');
+  html = html.replace(/^#\s(.+)$/gm,'<h3>$1</h3>');
+  html = html.replace(/^[-•]\s(.+)$/gm,'<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>');
+  html = html.replace(/^\d+\.\s(.+)$/gm,'<li>$1</li>');
+  const paras = html.split(/\n\n+/);
+  html = paras.map(p=>{
+    p=p.trim(); if(!p) return '';
+    if(p.startsWith('<h3>')||p.startsWith('<ul>')||p.startsWith('<li>')) return p;
+    return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+  return html;
+}
+function escapeHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeJs(t) {
+  return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');
+}
+
+// ══════════════════════════════════════════════
+//  SAVE & LIBRARY SYSTEM
+// ══════════════════════════════════════════════
+
+// Storage keys
+const LS_CHATS     = 'tradeai_chats';
+const LS_TRAPCARDS = 'tradeai_trapcards';
+const LS_MCQS      = 'tradeai_mcqs';
+
+function loadLib(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
+}
+function saveLib(key, arr) {
+  // Keep max 50 items per type to stay within 5MB
+  if (arr.length > 50) arr = arr.slice(-50);
+  localStorage.setItem(key, JSON.stringify(arr));
+}
+
+/* ── Toast ── */
+function showToast(msg = '✓ Saved to Library') {
+  const t = document.getElementById('saveToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── Save current chat ── */
+function saveCurrentChat() {
+  if (!currentChapter || conversationHistory.length === 0) {
+    showToast('⚠️ Nothing to save yet');
+    return;
+  }
+  const chats = loadLib(LS_CHATS);
+  const key = currentChapter.subject + '::' + currentChapter.chapter;
+  // Remove old save for same chapter (replace)
+  const filtered = chats.filter(c => c.key !== key);
+  filtered.push({
+    id: Date.now(),
+    key,
+    subject: currentChapter.subject,
+    chapter: currentChapter.chapter,
+    date: new Date().toLocaleDateString('en-IN'),
+    msgCount: conversationHistory.length,
+    history: conversationHistory.slice(-20) // save last 20 msgs
+  });
+  saveLib(LS_CHATS, filtered);
+  document.getElementById('saveChatBtn').classList.add('saved');
+  document.getElementById('saveChatBtn').textContent = '✓ Saved';
+  showToast('✓ Chat saved — reload anytime from Library');
+}
+
+/* ── Auto-save trap cards ── */
+function autoSaveTrapCards(topic, subject, cards) {
+  const trapcards = loadLib(LS_TRAPCARDS);
+  const key = subject + '::' + topic;
+  const filtered = trapcards.filter(t => t.key !== key);
+  filtered.push({
+    id: Date.now(),
+    key,
+    topic,
+    subject,
+    date: new Date().toLocaleDateString('en-IN'),
+    cards
+  });
+  saveLib(LS_TRAPCARDS, filtered);
+  showToast('🃏 Trap cards auto-saved to Library');
+}
+
+/* ── Auto-save MCQ sets ── */
+function autoSaveMCQs(topic, subject, questions) {
+  const mcqs = loadLib(LS_MCQS);
+  const key = subject + '::' + topic + '::' + Date.now();
+  mcqs.push({
+    id: Date.now(),
+    key,
+    topic,
+    subject,
+    date: new Date().toLocaleDateString('en-IN'),
+    questions
+  });
+  saveLib(LS_MCQS, mcqs);
+  showToast('📝 MCQs auto-saved to Library');
+}
+
+/* ── Show Library screen ── */
+function showLibrary() {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('chapterScreen').style.display = 'none';
+  document.getElementById('tutorScreen').style.display = 'none';
+  document.getElementById('weaknessScreen').style.display = 'none';
+  document.getElementById('libraryScreen').style.display = 'block';
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const chats     = loadLib(LS_CHATS);
+  const trapcards = loadLib(LS_TRAPCARDS);
+  const mcqs      = loadLib(LS_MCQS);
+
+  // Stats
+  document.getElementById('libStats').innerHTML = `
+    <div class="lib-stat"><strong>${chats.length}</strong>Saved Chats</div>
+    <div class="lib-stat"><strong>${trapcards.length}</strong>Trap Card Sets</div>
+    <div class="lib-stat"><strong>${mcqs.length}</strong>MCQ Sets</div>
+    <div class="lib-stat"><strong>${chats.length + trapcards.length + mcqs.length}</strong>Total Saved</div>
+  `;
+
+  renderLibChats(chats);
+  renderLibTrapCards(trapcards);
+  renderLibMCQs(mcqs);
+}
+
+function renderLibChats(chats) {
+  const el = document.getElementById('libChats');
+  if (chats.length === 0) {
+    el.innerHTML = `<div class="lib-empty"><div class="big">💬</div><p>No saved chats yet.<br>Open any chapter and tap <strong>💾 Save</strong> in the tutor header.</p></div>`;
+    return;
+  }
+  el.innerHTML = [...chats].reverse().map(c => `
+    <div class="lib-item">
+      <div class="lib-item-top">
+        <div class="lib-item-title">${escapeHtml(c.chapter)}</div>
+        <div class="lib-item-meta">${c.date}</div>
+      </div>
+      <div class="lib-item-sub">${escapeHtml(c.subject)} · ${c.msgCount} messages</div>
+      <div class="lib-item-actions">
+        <button class="lib-action-btn" onclick="resumeChat(${c.id})">▶ Resume Chat</button>
+        <button class="lib-action-btn danger" onclick="deleteLibItem('${LS_CHATS}',${c.id})">✕ Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLibTrapCards(trapcards) {
+  const el = document.getElementById('libTrapcards');
+  if (trapcards.length === 0) {
+    el.innerHTML = `<div class="lib-empty"><div class="big">🃏</div><p>No trap cards saved yet.<br>Generate trap cards from any topic — they auto-save here.</p></div>`;
+    return;
+  }
+  el.innerHTML = [...trapcards].reverse().map(tc => `
+    <div class="lib-item">
+      <div class="lib-item-top">
+        <div class="lib-item-title">🃏 ${escapeHtml(tc.topic)}</div>
+        <div class="lib-item-meta">${tc.date}</div>
+      </div>
+      <div class="lib-item-sub">${escapeHtml(tc.subject)} · ${tc.cards.length} card${tc.cards.length!==1?'s':''}</div>
+      <div class="lib-item-actions">
+        <button class="lib-action-btn" onclick="toggleLibExpand('tc_${tc.id}')">👁 Review</button>
+        <button class="lib-action-btn danger" onclick="deleteLibItem('${LS_TRAPCARDS}',${tc.id})">✕ Delete</button>
+      </div>
+      <div class="lib-expanded" id="tc_${tc.id}">
+        ${tc.cards.map(c=>`
+          <div class="trap-card" style="margin-bottom:10px;">
+            <div class="trap-card-title">🪤 ${escapeHtml(c.topic||tc.topic)}</div>
+            <p><strong style="color:#fde68a;">⚠️ Mistake:</strong> ${escapeHtml(c.trap||'')}</p>
+            <p><strong style="color:#fca5a5;">❌ Why Wrong:</strong> ${escapeHtml(c.why||'')}</p>
+            <p><strong style="color:#86efac;">✅ Correct:</strong> ${escapeHtml(c.correct||'')}</p>
+            <p><strong style="color:#c4b5fd;">🧠 Memory:</strong> ${escapeHtml(c.memory||'')}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLibMCQs(mcqs) {
+  const el = document.getElementById('libMcqs');
+  if (mcqs.length === 0) {
+    el.innerHTML = `<div class="lib-empty"><div class="big">📝</div><p>No MCQ sets saved yet.<br>Generate practice questions — they auto-save here.</p></div>`;
+    return;
+  }
+  el.innerHTML = [...mcqs].reverse().map(m => `
+    <div class="lib-item">
+      <div class="lib-item-top">
+        <div class="lib-item-title">📝 ${escapeHtml(m.topic)}</div>
+        <div class="lib-item-meta">${m.date}</div>
+      </div>
+      <div class="lib-item-sub">${escapeHtml(m.subject)} · ${m.questions.length} question${m.questions.length!==1?'s':''}</div>
+      <div class="lib-item-actions">
+        <button class="lib-action-btn" onclick="toggleLibExpand('mcq_${m.id}')">▶ Practice Again</button>
+        <button class="lib-action-btn danger" onclick="deleteLibItem('${LS_MCQS}',${m.id})">✕ Delete</button>
+      </div>
+      <div class="lib-expanded" id="mcq_${m.id}">
+        ${m.questions.map((q,qi)=>{
+          const qId='libq_'+m.id+'_'+qi;
+          const opts=(q.options||[]).map((o,i)=>`<div class="pq-option" id="${qId}_opt${i}" onclick="checkAnswer('${qId}',${i},${q.correct||0},'${escapeJs(q.explanation||'')}')">${escapeHtml(o)}</div>`).join('');
+          return `<div class="practice-q" style="margin-bottom:10px;">
+            <div class="practice-q-title">📝 Q${qi+1}: ${escapeHtml(q.topic||'')}</div>
+            <p>${escapeHtml(q.question||'')}</p>
+            <div class="pq-options">${opts}</div>
+            <div class="pq-explanation" id="${qId}_exp">${escapeHtml(q.explanation||'')}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleLibExpand(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+function switchLibTab(tab, btn) {
+  document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.lib-section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('lib' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+function resumeChat(id) {
+  const chats = loadLib(LS_CHATS);
+  const saved = chats.find(c => c.id === id);
+  if (!saved) return;
+  currentSubject = SUBJECTS.find(s => s.name === saved.subject) || null;
+  openTutor(saved.subject, saved.chapter);
+  // Restore history
+  conversationHistory = saved.history || [];
+  // Re-render messages
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  conversationHistory.forEach(msg => {
+    appendMessage(msg.role === 'user' ? 'user' : 'ai', msg.content);
+  });
+  showToast('✓ Chat resumed — ' + saved.chapter);
+}
+
+function deleteLibItem(key, id) {
+  const arr = loadLib(key).filter(i => i.id !== id);
+  saveLib(key, arr);
+  renderLibrary();
+  showToast('🗑️ Deleted');
+}
+
+function clearAllLibrary() {
+  if (!confirm('Clear ALL saved library content? This cannot be undone.')) return;
+  localStorage.removeItem(LS_CHATS);
+  localStorage.removeItem(LS_TRAPCARDS);
+  localStorage.removeItem(LS_MCQS);
+  renderLibrary();
+  showToast('🗑️ Library cleared');
+}
+
+// ══════════════════════════════════════════════
+//  CONCEPT EXPLAINER — Select / Long-Press
+// ══════════════════════════════════════════════
+let conceptTerm = '';
+let conceptLastExplained = '';
+let longPressTimer = null;
+let selectionBubbleTimeout = null;
+
+const tooltip    = () => document.getElementById('conceptTooltip');
+const selBubble  = () => document.getElementById('selectionBubble');
+
+/* ── Helpers ── */
+function positionTooltip(x, y) {
+  const tt = tooltip();
+  tt.style.left = '0px'; tt.style.top = '0px'; // reset to measure
+  tt.classList.add('visible');
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let lx = x - tw / 2, ly = y - th - 14;
+  if (lx < 8) lx = 8;
+  if (lx + tw > vw - 8) lx = vw - tw - 8;
+  if (ly < 8) ly = y + 20; // flip below
+  tt.style.left = lx + 'px';
+  tt.style.top  = ly + 'px';
+}
+
+function showConceptTooltip(term, x, y) {
+  if (!term || term.length < 2) return;
+  conceptTerm = term.trim();
+  document.getElementById('ctTerm').textContent = conceptTerm;
+  document.getElementById('ctLoading').style.display = 'flex';
+  document.getElementById('ctContent').style.display = 'none';
+  document.getElementById('ctFooter').style.display = 'none';
+  tooltip().classList.remove('visible');
+  // small delay for layout
+  setTimeout(() => positionTooltip(x, y), 10);
+  fetchConceptExplanation(conceptTerm);
+}
+
+function closeConceptTooltip() {
+  tooltip().classList.remove('visible');
+  conceptTerm = '';
+}
+
+async function fetchConceptExplanation(term, mode='normal') {
+  if (!apiKey) {
+    document.getElementById('ctLoading').style.display = 'none';
+    document.getElementById('ctContent').style.display = 'block';
+    document.getElementById('ctContent').innerHTML = '<p style="color:var(--warn);">⚡ Connect your API key to get instant explanations!</p>';
+    document.getElementById('ctFooter').style.display = 'flex';
+    return;
+  }
+
+  const subject = currentChapter?.subject || 'Nursing';
+  const chapter = currentChapter?.chapter || 'General';
+
+  const prompts = {
+    normal: `You are a sharp, concise nursing tutor for ABVMU B.Sc. Nursing students.
+The student selected the term: "${term}"
+Context: They are studying ${subject} → ${chapter}.
+
+Explain this term in 3-5 lines maximum:
+1. What it IS (one crisp line)
+2. Why it MATTERS clinically (one line)
+3. One quick memory trick or analogy if helpful
+
+Use **bold** for key words. Keep it mobile-friendly and scannable. No fluff.`,
+    simpler: `Explain "${term}" to a nursing student in the simplest possible way — like explaining to a 10-year-old. One analogy. Max 3 lines. Use **bold** sparingly.`
+  };
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        max_tokens: 300,
+        system: 'Return only a brief, formatted explanation. Use markdown (**bold**, *italic*, - bullets). No intro phrases like "Sure!" or "Great question!". Be direct.',
+        messages: [{ role: 'user', content: prompts[mode] || prompts.normal }]
+      })
+    });
+
+    if (!response.ok) throw new Error('API error');
+    const data = await response.json();
+    const raw = data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+
+    conceptLastExplained = term;
+    document.getElementById('ctLoading').style.display = 'none';
+    document.getElementById('ctContent').style.display = 'block';
+    document.getElementById('ctContent').innerHTML = formatAIResponse(raw);
+    document.getElementById('ctFooter').style.display = 'flex';
+
+    // re-position after content loaded (height changed)
+    const tt = tooltip();
+    const rect = { x: parseFloat(tt.style.left) + tt.offsetWidth/2, y: parseFloat(tt.style.top) };
+    positionTooltip(rect.x, rect.y + 20);
+
+  } catch(err) {
+    document.getElementById('ctLoading').style.display = 'none';
+    document.getElementById('ctContent').style.display = 'block';
+    document.getElementById('ctContent').innerHTML = `<p style="color:#fca5a5;">Error: ${escapeHtml(err.message)}</p>`;
+    document.getElementById('ctFooter').style.display = 'flex';
+  }
+}
+
+function explainSimpler() {
+  if (!conceptTerm) return;
+  document.getElementById('ctLoading').style.display = 'flex';
+  document.getElementById('ctContent').style.display = 'none';
+  document.getElementById('ctFooter').style.display = 'none';
+  fetchConceptExplanation(conceptTerm, 'simpler');
+}
+
+function askInChat() {
+  if (!conceptTerm) return;
+  closeConceptTooltip();
+  // If we're in tutor screen, populate the chat input
+  if (document.getElementById('tutorScreen').style.display !== 'none') {
+    const inp = document.getElementById('chatInput');
+    inp.value = `Explain "${conceptTerm}" in more detail`;
+    inp.focus();
+    autoResize(inp);
+  } else {
+    // Go to quick doubt
+    document.getElementById('quickDoubt').value = `Explain "${conceptTerm}"`;
+    showHome();
+    setTimeout(() => askQuickDoubt(), 100);
+  }
+}
+
+/* ── Selection bubble (mouse / touch) ── */
+function hideSelectionBubble() {
+  const sb = selBubble();
+  sb.classList.remove('visible');
+  if (selectionBubbleTimeout) clearTimeout(selectionBubbleTimeout);
+}
+
+function explainSelected() {
+  const sel = window.getSelection();
+  const term = sel ? sel.toString().trim() : '';
+  hideSelectionBubble();
+  if (!term || term.length < 2 || term.length > 80) return;
+  const sb = selBubble();
+  const x = parseFloat(sb.style.left) + 60;
+  const y = parseFloat(sb.style.top);
+  sel.removeAllRanges();
+  showConceptTooltip(term, x, y);
+}
+
+/* ── Wire up text selection in chat area ── */
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection();
+  const term = sel ? sel.toString().trim() : '';
+  if (!term || term.length < 2 || term.length > 80) {
+    hideSelectionBubble();
+    return;
+  }
+  // Only trigger inside chat-area or msg-bubbles
+  const anchor = sel.anchorNode?.parentElement;
+  if (!anchor || !anchor.closest('.chat-area, .msg-bubble, .ct-content')) {
+    hideSelectionBubble();
+    return;
+  }
+  try {
+    const range = sel.getRangeAt(0);
+    const rect  = range.getBoundingClientRect();
+    if (!rect.width) { hideSelectionBubble(); return; }
+    const sb = selBubble();
+    const bw = 130;
+    let lx = rect.left + rect.width/2 - bw/2;
+    if (lx < 8) lx = 8;
+    if (lx + bw > window.innerWidth - 8) lx = window.innerWidth - bw - 8;
+    sb.style.left = lx + 'px';
+    sb.style.top  = (rect.top - 44 + window.scrollY) + 'px';
+    sb.classList.add('visible');
+    // auto-hide after 4s
+    if (selectionBubbleTimeout) clearTimeout(selectionBubbleTimeout);
+    selectionBubbleTimeout = setTimeout(hideSelectionBubble, 4000);
+  } catch(e) { hideSelectionBubble(); }
+});
+
+/* ── Long-press on mobile for any word ── */
+document.addEventListener('touchstart', (e) => {
+  const el = e.target;
+  if (!el.closest('.chat-area, .msg-bubble')) return;
+  longPressTimer = setTimeout(() => {
+    // grab the word under touch
+    const touch = e.touches[0];
+    const range = document.caretRangeFromPoint
+      ? document.caretRangeFromPoint(touch.clientX, touch.clientY)
+      : null;
+    if (!range) return;
+    range.expand('word');
+    const term = range.toString().trim().replace(/[^a-zA-Z\s\-]/g, '');
+    if (term && term.length >= 2 && term.length <= 60) {
+      showConceptTooltip(term, touch.clientX, touch.clientY - 20);
+    }
+  }, 550);
+}, { passive: true });
+
+document.addEventListener('touchend',   () => { if (longPressTimer) clearTimeout(longPressTimer); }, { passive: true });
+document.addEventListener('touchmove',  () => { if (longPressTimer) clearTimeout(longPressTimer); }, { passive: true });
+
+/* ── Close tooltip on outside click ── */
+document.addEventListener('click', (e) => {
+  const tt = tooltip();
+  const sb = selBubble();
+  if (!tt.contains(e.target) && e.target !== sb && !sb.contains(e.target)) {
+    if (tt.classList.contains('visible') && !e.target.closest('.chat-area, .msg-bubble')) {
+      closeConceptTooltip();
+    }
+  }
+  if (!sb.contains(e.target) && e.target !== sb) {
+    // Don't hide bubble on selection
+  }
+}, true);
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
